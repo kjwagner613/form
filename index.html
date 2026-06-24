@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Quick Info Form</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+    input, textarea, select, button {
+      width: 100%; padding: 10px; margin: 8px 0; font-size: 16px;
+    }
+    button { background: black; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h2>Quick Info Form</h2>
+  <p>Fill this out real quick so I can finish your setup.</p>
+
+  <form id="infoForm">
+    <label>Services (list each with title, description, pricing preference, and price if applicable)</label>
+    <textarea name="services" required></textarea>
+
+    <label>What should be visible publicly? (list anything: services, pricing, bio, photos, etc.)</label>
+    <textarea name="visibility" required></textarea>
+
+    <label>Payment handling preference</label>
+    <select name="payment" required>
+      <option value="">Select one</option>
+      <option>No online payments — invoice only</option>
+      <option>PayPal</option>
+      <option>Credit card via processor</option>
+      <option>Not sure yet</option>
+    </select>
+
+    <label>Anything else you want?</label>
+    <textarea name="notes"></textarea>
+
+    <button type="submit">Send</button>
+  </form>
+
+  <p id="status"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <script>
+    (function() {
+      emailjs.init("0ud3zN6SBu4gaMJbx   ");
+    })();
+
+    document.getElementById("infoForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const data = {
+        services: this.services.value,
+        visibility: this.visibility.value,
+        payment: this.payment.value,
+        notes: this.notes.value
+      };
+
+      emailjs.send("service_4hb2alb", "template_p4d0akd", data)
+        .then(() => {
+          document.getElementById("status").innerText = "Sent! Thanks.";
+          this.reset();
+        })
+        .catch(() => {
+          document.getElementById("status").innerText = "Error sending. Try again.";
+        });
+    });
+  </script>
+
+</body>
+</html>
