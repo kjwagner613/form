@@ -9,6 +9,19 @@
       width: 100%; padding: 10px; margin: 8px 0; font-size: 16px;
     }
     button { background: black; color: white; border: none; cursor: pointer; }
+    .service-entry {
+      border: 1px solid #ddd;
+      padding: 12px;
+      margin: 12px 0;
+    }
+    .service-entry h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    .add-button {
+      background: #444;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
@@ -17,8 +30,25 @@
   <p>Fill this out real quick so I can finish your setup.</p>
 
   <form id="infoForm">
-    <label>Services (list each with title, description, pricing preference, and price if applicable)</label>
-    <textarea name="services" required></textarea>
+    <p><strong>Services</strong></p>
+    <p>Please add each service you want to offer. For every service, include a title, description, and price if applicable.</p>
+
+    <div id="servicesList">
+      <div class="service-entry">
+        <h3>Service 1</h3>
+
+        <label>Service title</label>
+        <input name="serviceTitle[]" required>
+
+        <label>Service description</label>
+        <textarea name="serviceDescription[]" required></textarea>
+
+        <label>Price, if applicable</label>
+        <input name="servicePrice[]" placeholder="Example: $99, starts at $150, or not applicable">
+      </div>
+    </div>
+
+    <button type="button" id="addService" class="add-button">Add another service</button>
 
     <label>What should be visible publicly? (list anything: services, pricing, bio, photos, etc.)</label>
     <textarea name="visibility" required></textarea>
@@ -42,27 +72,90 @@
 
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
   <script>
+    const emailPublicKey = "0ud3zN6SBu4gaMJbx";
+    const emailServiceId = "service_4hb2alb";
+    const emailTemplateId = "template_p4d0akd";
+
     (function() {
-      emailjs.init("0ud3zN6SBu4gaMJbx   ");
+      emailjs.init(emailPublicKey);
     })();
+
+    const servicesList = document.getElementById("servicesList");
+
+    document.getElementById("addService").addEventListener("click", function() {
+      const serviceNumber = servicesList.children.length + 1;
+      const serviceEntry = document.createElement("div");
+      serviceEntry.className = "service-entry";
+      serviceEntry.innerHTML = `
+        <h3>Service ${serviceNumber}</h3>
+
+        <label>Service title</label>
+        <input name="serviceTitle[]" required>
+
+        <label>Service description</label>
+        <textarea name="serviceDescription[]" required></textarea>
+
+        <label>Price, if applicable</label>
+        <input name="servicePrice[]" placeholder="Example: $99, starts at $150, or not applicable">
+      `;
+
+      servicesList.appendChild(serviceEntry);
+    });
 
     document.getElementById("infoForm").addEventListener("submit", function(e) {
       e.preventDefault();
 
+      const titles = this.querySelectorAll('[name="serviceTitle[]"]');
+      const descriptions = this.querySelectorAll('[name="serviceDescription[]"]');
+      const prices = this.querySelectorAll('[name="servicePrice[]"]');
+      const services = Array.from(titles).map((title, index) => {
+        const price = prices[index].value.trim() || "Not applicable";
+
+        return [
+          `Service ${index + 1}`,
+          `Title: ${title.value.trim()}`,
+          `Description: ${descriptions[index].value.trim()}`,
+          `Price: ${price}`
+        ].join("\n");
+      }).join("\n\n");
+
+      const message = [
+        "Services:",
+        services,
+        "",
+        "What should be visible publicly?",
+        this.visibility.value,
+        "",
+        "Payment handling preference:",
+        this.payment.value,
+        "",
+        "Anything else?",
+        this.notes.value || "None"
+      ].join("\n");
+
       const data = {
-        services: this.services.value,
+        from_name: "Quick Info Form",
+        reply_to: "no-reply@example.com",
+        subject: "New project info form submission",
+        services: services,
         visibility: this.visibility.value,
         payment: this.payment.value,
-        notes: this.notes.value
+        notes: this.notes.value,
+        message: message
       };
 
-      emailjs.send("service_4hb2alb", "template_p4d0akd", data)
+      emailjs.send(emailServiceId, emailTemplateId, data)
         .then(() => {
           document.getElementById("status").innerText = "Sent! Thanks.";
           this.reset();
         })
-        .catch(() => {
-          document.getElementById("status").innerText = "Error sending. Try again.";
+        .catch((error) => {
+          const message = error && (error.text || error.message)
+            ? error.text || error.message
+            : "Try again.";
+
+          console.error("EmailJS send failed:", error);
+          document.getElementById("status").innerText = `Error sending: ${message}`;
         });
     });
   </script>
